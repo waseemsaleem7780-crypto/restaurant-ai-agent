@@ -5,21 +5,17 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Models ki list (jo try karne hain) - Groq
+# Sirf woh models jo abhi 100% zinda hain
 GROQ_MODELS = [
-    "llama3-70b-8192",
-    "llama3-8b-8192",
-    "llama-3.1-70b-versatile",
-    "gemma2-9b-it"
+    "llama-3.3-70b-versatile",  # Latest
+    "llama-3.1-8b-instant",     # Latest Fast
 ]
 
-# Gemini Models (Free Tier)
+# Gemini ke naye models
 GEMINI_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-8b",
-    "gemini-1.5-pro"
+    "gemini-2.5-flash",         # Latest
+    "gemini-2.0-flash", 
+    "gemini-3.8-flash",        # Backup
 ]
 
 def get_working_llm():
@@ -30,33 +26,30 @@ def get_working_llm():
         for model_name in GROQ_MODELS:
             try:
                 llm = ChatGroq(model=model_name, temperature=0, groq_api_key=settings.GROQ_API_KEY)
-                llm.invoke("Hello") # Test call
+                llm.invoke("Hello")
                 logger.info(f"✅ Groq Model Working: {model_name}")
                 return llm
             except Exception as e:
                 logger.warning(f"❌ Groq Model Failed ({model_name}): {str(e)}")
                 continue
     
-    # 2. Gemini Models Check karo (Agar Groq fail ho jaye)
+    # 2. Gemini Models Check karo
     if settings.GEMINI_API_KEY:
         for model_name in GEMINI_MODELS:
             try:
                 llm = ChatGoogleGenerativeAI(model=model_name, temperature=0, google_api_key=settings.GEMINI_API_KEY)
-                llm.invoke("Hello") # Test call
+                llm.invoke("Hello")
                 logger.info(f"✅ Gemini Model Working: {model_name}")
                 return llm
             except Exception as e:
                 logger.warning(f"❌ Gemini Model Failed ({model_name}): {str(e)}")
                 continue
     
-    # 3. Agar kuch bhi kaam na kare
     raise Exception("❌ Koi bhi AI Model kaam nahi kar raha. API Keys check karein.")
 
-# Ek global variable jisme working LLM save hoga
 _working_llm = None
 
 def get_llm():
-    """Yeh function ek baar working model dhoond kar save kar leta hai"""
     global _working_llm
     if _working_llm is None:
         _working_llm = get_working_llm()
