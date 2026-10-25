@@ -1,26 +1,25 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from app.database import get_db
 from app.models import Restaurant, RestaurantUser, Order
 from app.schemas import RestaurantResponse, RestaurantLogin, TokenResponse
 from app.auth import verify_password, create_access_token
-import jwt
-from app.config import settings
-from fastapi import UploadFile, File
-from pypdf import PdfReader
-import io
-import json
-from langchain_groq import ChatGroq
 from app.config import settings
 from app.services.rag import train_restaurant_menu
-from langchain_google_genai import ChatGoogleGenerativeAI
+from app.services.ai_manager import get_llm  # <-- Auto-detect model import kiya
+from pypdf import PdfReader
+from pydantic import BaseModel
+import jwt
+import io
+import json
 
 router = APIRouter(prefix="/api/restaurant", tags=["Restaurant"])
 
-# Helper function: Token check karne ke liye (Jab owner request bhejega)
+# Helper function: Token check karne ke liye
 def verify_restaurant_token(authorization: str = Header(...)):
     try:
-        token = authorization.split(" ")[1] # "Bearer <token>" se token nikalna
+        token = authorization.split(" ")[1]
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM])
         if payload.get("role") != "owner":
             raise HTTPException(status_code=403, detail="Sirf restaurant owner access kar sakta hai")
@@ -50,11 +49,8 @@ def get_profile(payload: dict = Depends(verify_restaurant_token), db: Session = 
 
 @router.get("/orders")
 def get_my_orders(payload: dict = Depends(verify_restaurant_token), db: Session = Depends(get_db)):
-    # Owner sirf apne restaurant ke orders dekh sakta hai
     orders = db.query(Order).filter(Order.restaurant_id == payload["restaurant_id"]).all()
     return orders
-
-from pydantic import BaseModel
 
 class MenuItemCreate(BaseModel):
     name: str
@@ -69,9 +65,6 @@ def add_menu_item(item: MenuItemCreate, payload: dict = Depends(verify_restauran
     current_menu = restaurant.menu or {}
     current_menu[item.name] = {"price": item.price, "available": True}
     restaurant.menu = current_menu
-    
-    # Flag modified (SQLAlchemy ko batane ke liye ke JSON change hua hai)
-    from sqlalchemy.orm.attributes import flag_modified
     flag_modified(restaurant, "menu")
     
     db.commit()
@@ -99,11 +92,8 @@ async def upload_menu_pdf(
 
     if not extracted_text.strip():
         raise HTTPException(status_code=400, detail="PDF se koi text nahi mila (Image wali PDF ho sakti hai).")
-    # Temporary debug ke liye (baad mein hata dena)
-    print("GEMINI KEY:", settings.GEMINI_API_KEY)
-    # 2. AI (Groq) se text ko JSON menu mein badlo
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=settings.GEMINI_API_KEY)
-    
+
+    # 2. Auto-Detect AI Model se text ko JSON menu mein badlo
     prompt = f"""
     Extract the menu items from this restaurant menu text. 
     Return ONLY a valid JSON object where keys are item names and values are objects with "price" (number) and "available" (true).
@@ -114,8 +104,8 @@ async def upload_menu_pdf(
     """
     
     try:
+        llm = get_llm() # <-- Yeh khud working model dhoond lega
         ai_response = llm.invoke(prompt)
-        # Markdown formatting hatao agar AI ne lagayi ho
         clean_json = ai_response.content.replace("```json", "").replace("```", "").strip()
         menu_dict = json.loads(clean_json)
     except Exception as e:
@@ -124,8 +114,6 @@ async def upload_menu_pdf(
     # 3. Database mein save karo
     restaurant = db.query(Restaurant).filter(Restaurant.id == payload["restaurant_id"]).first()
     restaurant.menu = menu_dict
-    
-    from sqlalchemy.orm.attributes import flag_modified
     flag_modified(restaurant, "menu")
     db.commit()
 

@@ -1,16 +1,9 @@
 from app.agent.state import AgentState
-from langchain_google_genai import ChatGoogleGenerativeAI
-from app.config import settings
+from app.services.ai_manager import get_llm
 import json
 
-# Gemini AI Setup
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
-    temperature=0,
-    google_api_key=settings.GEMINI_API_KEY
-)
-
 def intent_node(state: AgentState):
+    """Customer ka message padh kar intent decide karta hai"""
     prompt = f"""
     Customer message: "{state['message']}"
     Menu: {json.dumps(state['menu'])}
@@ -19,6 +12,7 @@ def intent_node(state: AgentState):
     Return only the single word.
     """
     try:
+        llm = get_llm() # Auto-detect model
         response = llm.invoke(prompt)
         intent = response.content.strip().lower()
         if intent not in ['menu', 'order', 'status', 'other']:
