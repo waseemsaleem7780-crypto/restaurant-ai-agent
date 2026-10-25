@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'https://restaurant-ai-agent-4toc.onrender.com',
-  timeout: 180000, // 3 minute (180 seconds) - AI ko jawab dene ka time do
+  timeout: 180000, // 3 minute (180 seconds)
 });
 
 api.interceptors.response.use(
