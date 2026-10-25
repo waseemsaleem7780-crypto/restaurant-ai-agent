@@ -1,82 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models import Restaurant, AdminUser, RestaurantUser
-from app.schemas import RestaurantCreate, RestaurantResponse, AdminLogin, TokenResponse
-from app.auth import verify_password, create_access_token, get_password_hash
-from app.config import settings
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.database import engine, Base
+from app.routes import admin, restaurant, webhook
 
-router = APIRouter(prefix="/api/admin", tags=["Admin"])
+# Database tables create karein
+Base.metadata.create_all(bind=engine)
 
-@router.post("/login", response_model=TokenResponse)
-def admin_login(data: AdminLogin, db: Session = Depends(get_db)):
-    admin = db.query(AdminUser).filter(AdminUser.email == data.email).first()
-    if not admin or not verify_password(data.password, admin.password_hash):
-        raise HTTPException(status_code=401, detail="Galat email ya password")
-    
-    token = create_access_token({"admin_id": admin.id, "role": "super_admin"})
-    return {"token": token}
+# FastAPI app initialize karein
+app = FastAPI(
+    title="Restaurant WhatsApp Agent API",
+    version="1.0.0"
+)
 
-@router.post("/restaurants", response_model=RestaurantResponse)
-def create_restaurant(data: RestaurantCreate, db: Session = Depends(get_db)):
-    existing = db.query(Restaurant).filter(Restaurant.whatsapp_number == data.whatsapp_number).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Yeh WhatsApp number pehle se registered hai")
-    
-    existing_user = db.query(RestaurantUser).filter(RestaurantUser.email == data.owner_email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Yeh Email pehle se registered hai")
+# CORS setup
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    new_restaurant = Restaurant(
-        name=data.name,
-        logo_url=data.logo_url,
-        address=data.address,
-        phone=data.phone,
-        whatsapp_number=data.whatsapp_number,
-        whatsapp_provider=data.whatsapp_provider, # <-- Naya
-        whatsapp_api_key=data.whatsapp_api_key    # <-- Naya
-    )
-    db.add(new_restaurant)
-    db.commit()
-    db.refresh(new_restaurant)
+# Routes include karein
+app.include_router(admin.router)
+app.include_router(restaurant.router)
+app.include_router(webhook.router)
 
-    new_owner = RestaurantUser(
-        restaurant_id=new_restaurant.id,
-        email=data.owner_email,
-        password_hash=get_password_hash(data.owner_password)
-    )
-    db.add(new_owner)
-    db.commit()
-
-    return new_restaurant
-
-@router.get("/restaurants", response_model=list[RestaurantResponse])
-def get_all_restaurants(db: Session = Depends(get_db)):
-    restaurants = db.query(Restaurant).all()
-    result = []
-    for r in restaurants:
-        owner = db.query(RestaurantUser).filter(RestaurantUser.restaurant_id == r.id).first()
-        r_dict = {
-            "id": r.id, "name": r.name, "logo_url": r.logo_url, "address": r.address,
-            "phone": r.phone, "whatsapp_number": r.whatsapp_number, "menu": r.menu,
-            "is_active": r.is_active, "owner_email": owner.email if owner else "N/A",
-            "whatsapp_provider": r.whatsapp_provider, # <-- Naya
-            "whatsapp_api_key": r.whatsapp_api_key    # <-- Naya
-        }
-        result.append(r_dict)
-    return result
-
-# Temporary Admin Creation Route
-@router.get("/create-first-admin")
-def create_first_admin(db: Session = Depends(get_db)):
-    existing = db.query(AdminUser).filter(AdminUser.email == "admin@restaurant.com").first()
-    if existing:
-        return {"message": "Admin pehle se maujood hai!"}
-    
-    new_admin = AdminUser(
-        email="admin@restaurant.com",
-        password_hash=get_password_hash("admin123")
-    )
-    db.add(new_admin)
-    db.commit()
-    return {"message": "✅ Admin successfully ban gaya! Ab aap login kar sakte hain."}
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "Backend is running perfectly!"}
