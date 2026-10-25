@@ -36,11 +36,20 @@ export default function OwnerDashboard() {
     fetchOrders();
   }, [navigate, token]);
 
-  const fetchProfile = async () => {
+    const fetchProfile = async () => {
     try {
-      const res = await api.get('/api/restaurant/profile', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await api.get('/api/restaurant/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setProfile(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error("Profile Error:", err.response?.data || err.message);
+      if (err.code === 'ECONNABORTED') {
+        alert("Server jaag raha hai (Free Tier). Baraye meharbani 1 minute baad page refresh karein.");
+      } else {
+        alert("Profile load nahi ho saki. Check karein ke aapka Render URL sahi hai.");
+      }
+    }
   };
 
   const fetchOrders = async () => {
