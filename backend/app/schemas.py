@@ -11,6 +11,8 @@ class RestaurantCreate(BaseModel):
     whatsapp_number: str
     owner_email: EmailStr  # <-- Yeh naya add kiya
     owner_password: str    # <-- Yeh naya add kiya
+    whatsapp_provider: Optional[str] = "web2c"
+    whatsapp_api_key: Optional[str] = None
 
 class RestaurantResponse(BaseModel):
     id: int
@@ -22,6 +24,8 @@ class RestaurantResponse(BaseModel):
     menu: Dict[str, Any]
     is_active: bool
     owner_email: Optional[str] = None  # <-- Yeh naya add kiya
+    whatsapp_provider: Optional[str] = "web2c"
+    whatsapp_api_key: Optional[str] = None
 
     class Config:
         from_attributes = True

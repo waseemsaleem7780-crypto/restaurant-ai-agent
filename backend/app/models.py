@@ -13,6 +13,8 @@ class Restaurant(Base):
     whatsapp_number = Column(String(20), unique=True, nullable=False)
     menu = Column(JSON, default={})  # Menu JSON format mein save hoga
     is_active = Column(Boolean, default=True)
+    whatsapp_provider = Column(String(50), default="web2c") # web2c ya twilio
+    whatsapp_api_key = Column(String(500), nullable=True)   # API Key
     created_at = Column(TIMESTAMP, server_default=func.now())
 
 class RestaurantUser(Base):

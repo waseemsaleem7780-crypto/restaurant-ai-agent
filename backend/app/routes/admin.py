@@ -4,8 +4,9 @@ from app.database import get_db
 from app.models import Restaurant, AdminUser, RestaurantUser
 from app.schemas import RestaurantCreate, RestaurantResponse, AdminLogin, TokenResponse
 from app.auth import verify_password, create_access_token, get_password_hash
+from app.config import settings
 
-router = APIRouter(prefix="/api/admin", tags=["Admin"]) # <-- YEH LINE MISSING HAI
+router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
 @router.post("/login", response_model=TokenResponse)
 def admin_login(data: AdminLogin, db: Session = Depends(get_db)):
@@ -31,7 +32,9 @@ def create_restaurant(data: RestaurantCreate, db: Session = Depends(get_db)):
         logo_url=data.logo_url,
         address=data.address,
         phone=data.phone,
-        whatsapp_number=data.whatsapp_number
+        whatsapp_number=data.whatsapp_number,
+        whatsapp_provider=data.whatsapp_provider,  # <-- Naya Field
+        whatsapp_api_key=data.whatsapp_api_key     # <-- Naya Field
     )
     db.add(new_restaurant)
     db.commit()
@@ -52,25 +55,24 @@ def get_all_restaurants(db: Session = Depends(get_db)):
     restaurants = db.query(Restaurant).all()
     result = []
     for r in restaurants:
-        # Owner ka email dhoondo
         owner = db.query(RestaurantUser).filter(RestaurantUser.restaurant_id == r.id).first()
         r_dict = {
             "id": r.id, "name": r.name, "logo_url": r.logo_url, "address": r.address,
             "phone": r.phone, "whatsapp_number": r.whatsapp_number, "menu": r.menu,
-            "is_active": r.is_active, "owner_email": owner.email if owner else "N/A"
+            "is_active": r.is_active, "owner_email": owner.email if owner else "N/A",
+            "whatsapp_provider": r.whatsapp_provider,  # <-- Naya Field
+            "whatsapp_api_key": r.whatsapp_api_key     # <-- Naya Field
         }
         result.append(r_dict)
     return result
 
-
+# Temporary Admin Creation Route (Jo humne pehle banaya tha)
 @router.get("/create-first-admin")
 def create_first_admin(db: Session = Depends(get_db)):
-    # Check karo ke admin pehle se toh nahi hai
     existing = db.query(AdminUser).filter(AdminUser.email == "admin@restaurant.com").first()
     if existing:
         return {"message": "Admin pehle se maujood hai!"}
     
-    # Naya admin banao
     new_admin = AdminUser(
         email="admin@restaurant.com",
         password_hash=get_password_hash("admin123")
