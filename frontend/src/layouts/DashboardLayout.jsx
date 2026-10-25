@@ -1,9 +1,12 @@
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Store, Users, Activity, Bell, Search } from 'lucide-react';
+// Moon aur Sun import kiye
+import { LogOut, LayoutDashboard, Store, Users, Activity, Bell, Search, Moon, Sun } from 'lucide-react';
+import { useState } from 'react';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(false); // Dark mode state
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -62,12 +65,20 @@ export default function DashboardLayout() {
         
         {/* Top Navbar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0' }}>
+          
           <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', padding: '8px 16px', borderRadius: '8px', width: '300px' }}>
             <Search size={18} color="#94a3b8" />
             <input type="text" placeholder="Search..." style={{ border: 'none', background: 'transparent', outline: 'none', marginLeft: '10px', width: '100%' }} />
           </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            {/* Dark Mode Toggle Button */}
+            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+              {isDarkMode ? <Sun size={22} /> : <Moon size={22} />}
+            </button>
+            
             <Bell size={22} color="#64748b" />
+            
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#3b82f6', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold' }}>A</div>
               <span style={{ fontWeight: '600', color: '#1e293b' }}>Admin</span>
@@ -75,9 +86,9 @@ export default function DashboardLayout() {
           </div>
         </div>
 
-        {/* Page Content Yahan Aayega */}
+        {/* Page Content */}
         <div style={{ padding: '30px 40px', flex: 1, overflowY: 'auto' }}>
-          <Outlet /> {/* <-- Yeh React Router ka magic hai, yahan alag alag pages load honge */}
+          <Outlet /> 
         </div>
       </div>
     </div>

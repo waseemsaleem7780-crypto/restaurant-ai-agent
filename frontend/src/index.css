@@ -109,3 +109,16 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+/* Live Status Pulse Animation */
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Dark Mode Variables (Optional future use) */
+.dark-mode {
+  background-color: #0f172a !important;
+  color: white !important;
+}
