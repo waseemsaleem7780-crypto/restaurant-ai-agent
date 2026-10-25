@@ -7,8 +7,12 @@ export default function Restaurants() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   
+  // Naye fields add kiye hain
   const [newRestaurant, setNewRestaurant] = useState({ 
-    name: '', whatsapp_number: '', address: '', phone: '', owner_email: '', owner_password: '' 
+    name: '', whatsapp_number: '', address: '', phone: '', 
+    owner_email: '', owner_password: '',
+    whatsapp_provider: 'web2c', // Default
+    whatsapp_api_key: ''        // Khali
   });
 
   useEffect(() => { fetchRestaurants(); }, []);
@@ -23,20 +27,19 @@ export default function Restaurants() {
     try {
       await api.post('/api/admin/restaurants', newRestaurant);
       setIsModalOpen(false);
-      setNewRestaurant({ name: '', whatsapp_number: '', address: '', phone: '', owner_email: '', owner_password: '' });
+      setNewRestaurant({ name: '', whatsapp_number: '', address: '', phone: '', owner_email: '', owner_password: '', whatsapp_provider: 'web2c', whatsapp_api_key: '' });
       fetchRestaurants();
-      alert("Client created successfully! You can now copy their login link.");
+      alert("Client created successfully!");
     } catch (error) {
       alert(error.response?.data?.detail || "Error adding restaurant");
     }
   };
 
   const copyToClipboard = (email) => {
-    // Hum client ko direct login page ka link aur email denge
-    const text = `Welcome to RestoAgent!\n\nLogin Link: http://localhost:5173/owner/login\nEmail: ${email}\nPassword: (Jo aapne set kiya tha)`;
+    const text = `Welcome to RestoAgent!\n\nLogin Link: https://restaurant-ai-agent-omega.vercel.app/owner/login\nEmail: ${email}\nPassword: (Jo aapne set kiya tha)`;
     navigator.clipboard.writeText(text);
     setCopiedId(email);
-    setTimeout(() => setCopiedId(null), 2000); // 2 second baad icon wapas normal
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
@@ -44,7 +47,7 @@ export default function Restaurants() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <div>
           <h1 style={{ margin: 0, color: '#0f172a', fontSize: '28px' }}>Clients (Restaurants)</h1>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b' }}>Manage your clients and their login access.</p>
+          <p style={{ margin: '5px 0 0 0', color: '#64748b' }}>Manage your clients and their API access.</p>
         </div>
         <button onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
           <PlusCircle size={18} /> Add New Client
@@ -56,7 +59,7 @@ export default function Restaurants() {
           <thead style={{ backgroundColor: '#f8fafc', color: '#64748b', fontSize: '13px' }}>
             <tr>
               <th style={{ padding: '16px 20px' }}>Restaurant</th>
-              <th style={{ padding: '16px 20px' }}>WhatsApp</th>
+              <th style={{ padding: '16px 20px' }}>Provider</th>
               <th style={{ padding: '16px 20px' }}>Login Email</th>
               <th style={{ padding: '16px 20px' }}>Action</th>
             </tr>
@@ -65,7 +68,9 @@ export default function Restaurants() {
             {restaurants.map((r) => (
               <tr key={r.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                 <td style={{ padding: '16px 20px', fontWeight: '500' }}>{r.name}</td>
-                <td style={{ padding: '16px 20px' }}>{r.whatsapp_number}</td>
+                <td style={{ padding: '16px 20px', textTransform: 'uppercase', fontSize: '12px', fontWeight: 'bold', color: r.whatsapp_provider === 'twilio' ? '#ef4444' : '#3b82f6' }}>
+                  {r.whatsapp_provider || 'WEB2C'}
+                </td>
                 <td style={{ padding: '16px 20px', color: '#3b82f6', fontWeight: '500' }}>{r.owner_email || 'N/A'}</td>
                 <td style={{ padding: '16px 20px' }}>
                   <button 
@@ -96,6 +101,18 @@ export default function Restaurants() {
               <h3 style={{margin: '10px 0 0 0', fontSize: '16px', color: '#475569'}}>Owner Login Details</h3>
               <input type="email" placeholder="Owner Email" required value={newRestaurant.owner_email} onChange={(e) => setNewRestaurant({...newRestaurant, owner_email: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
               <input type="text" placeholder="Set Password" required value={newRestaurant.owner_password} onChange={(e) => setNewRestaurant({...newRestaurant, owner_password: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
+
+              {/* Naya WhatsApp API Section */}
+              <h3 style={{margin: '10px 0 0 0', fontSize: '16px', color: '#475569'}}>WhatsApp API Details</h3>
+              <select 
+                value={newRestaurant.whatsapp_provider} 
+                onChange={(e) => setNewRestaurant({...newRestaurant, whatsapp_provider: e.target.value})} 
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+              >
+                <option value="web2c">Web2C</option>
+                <option value="twilio">Twilio</option>
+              </select>
+              <input type="text" placeholder="API Key" required value={newRestaurant.whatsapp_api_key} onChange={(e) => setNewRestaurant({...newRestaurant, whatsapp_api_key: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '10px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
