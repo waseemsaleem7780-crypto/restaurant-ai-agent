@@ -5,7 +5,7 @@ import json
 
 # LLM Setup (Groq)
 llm = ChatGroq(
-    model="llama-3.3-70b-versatile" # Groq ka fast model
+    model="llama-3.3-70b-versatile",  # <-- Yahan comma lagana hai
     temperature=0,
     groq_api_key=settings.GROQ_API_KEY
 )
