@@ -11,6 +11,7 @@ class Settings:
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     WHATSAPP_API_KEY: str = os.getenv("WHATSAPP_API_KEY", "")
     WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL", "")
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6LyJyG6maqwckLvkeJMYHMYtJPj0c5x51N-f5S5odGawA")# <-- Yeh yahan aayega
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")  # <-- Key hata di
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+
 settings = Settings()
