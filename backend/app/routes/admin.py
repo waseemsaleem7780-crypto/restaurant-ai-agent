@@ -80,3 +80,14 @@ def create_first_admin(db: Session = Depends(get_db)):
     db.add(new_admin)
     db.commit()
     return {"message": "✅ Admin successfully ban gaya! Ab aap login kar sakte hain."}
+from sqlalchemy import text
+
+@router.get("/migrate-db")
+def migrate_db(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("ALTER TABLE restaurants ADD COLUMN whatsapp_provider VARCHAR(50) DEFAULT 'web2c';"))
+        db.execute(text("ALTER TABLE restaurants ADD COLUMN whatsapp_api_key VARCHAR(500);"))
+        db.commit()
+        return {"message": "✅ Columns add ho gaye! Ab login karein."}
+    except Exception as e:
+        return {"message": f"Error ya pehle se maujood: {str(e)}"}
