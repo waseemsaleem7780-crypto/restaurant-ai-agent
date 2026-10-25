@@ -11,7 +11,6 @@ class Settings:
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     WHATSAPP_API_KEY: str = os.getenv("WHATSAPP_API_KEY", "")
     WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL", "")
-    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama3-70b-8192")
-    GEMINI_API_KEY: str = os.getenv("AQ.Ab8RN6LI1wsxAA8nmuGc_031vymZiWB7oVdrb-jcj30IMPb7HA", "") # <-- Yeh yahan aayega
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6LI1wsxAA8nmuGc_031vymZiWB7oVdrb-jcj30IMPb7HA")# <-- Yeh yahan aayega
 
 settings = Settings()

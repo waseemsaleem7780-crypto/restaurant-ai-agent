@@ -99,7 +99,8 @@ async def upload_menu_pdf(
 
     if not extracted_text.strip():
         raise HTTPException(status_code=400, detail="PDF se koi text nahi mila (Image wali PDF ho sakti hai).")
-
+    # Temporary debug ke liye (baad mein hata dena)
+    print("GEMINI KEY:", settings.GEMINI_API_KEY)
     # 2. AI (Groq) se text ko JSON menu mein badlo
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=settings.GEMINI_API_KEY)
     
