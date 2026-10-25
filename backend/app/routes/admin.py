@@ -61,3 +61,20 @@ def get_all_restaurants(db: Session = Depends(get_db)):
         }
         result.append(r_dict)
     return result
+
+
+@router.get("/create-first-admin")
+def create_first_admin(db: Session = Depends(get_db)):
+    # Check karo ke admin pehle se toh nahi hai
+    existing = db.query(AdminUser).filter(AdminUser.email == "admin@restaurant.com").first()
+    if existing:
+        return {"message": "Admin pehle se maujood hai!"}
+    
+    # Naya admin banao
+    new_admin = AdminUser(
+        email="admin@restaurant.com",
+        password_hash=get_password_hash("admin123")
+    )
+    db.add(new_admin)
+    db.commit()
+    return {"message": "✅ Admin successfully ban gaya! Ab aap login kar sakte hain."}
