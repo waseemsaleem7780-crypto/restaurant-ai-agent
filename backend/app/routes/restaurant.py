@@ -13,6 +13,7 @@ import json
 from langchain_groq import ChatGroq
 from app.config import settings
 from app.services.rag import train_restaurant_menu
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 router = APIRouter(prefix="/api/restaurant", tags=["Restaurant"])
 
@@ -100,7 +101,7 @@ async def upload_menu_pdf(
         raise HTTPException(status_code=400, detail="PDF se koi text nahi mila (Image wali PDF ho sakti hai).")
 
     # 2. AI (Groq) se text ko JSON menu mein badlo
-    llm = ChatGroq(model=settings.GROQ_MODEL, temperature=0, groq_api_key=settings.GROQ_API_KEY)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=settings.GEMINI_API_KEY)
     
     prompt = f"""
     Extract the menu items from this restaurant menu text. 
