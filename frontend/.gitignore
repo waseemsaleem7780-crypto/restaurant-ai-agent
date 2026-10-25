@@ -1,0 +1,15 @@
+# Secrets
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.db
+backend/restaurant_app.db
+
+# Mac
+.DS_Store
+
+# Frontend (Sabse Zaroori - Badi files)
+frontend/node_modules/
+frontend/dist/

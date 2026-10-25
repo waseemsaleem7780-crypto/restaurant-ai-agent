@@ -1,0 +1,237 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LogOut, Utensils, ShoppingBag, DollarSign, Plus, Edit, Trash2, X, Upload } from 'lucide-react';
+import api from '../api/client';
+
+export default function OwnerDashboard() {
+  const [orders, setOrders] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [activeTab, setActiveTab] = useState('orders');
+  
+  // Naya State Modal ke liye
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newItem, setNewItem] = useState({ name: '', price: '' });
+  const [file, setFile] = useState(null);
+  
+  const navigate = useNavigate();
+  const token = localStorage.getItem('ownerToken');
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/owner/login');
+      return;
+    }
+    fetchProfile();
+    fetchOrders();
+  }, [navigate, token]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get('/api/restaurant/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProfile(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const res = await api.get('/api/restaurant/orders', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrders(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Naya Function: Menu Item Add karne ke liye
+  const handleAddMenuItem = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/api/restaurant/menu', {
+        name: newItem.name,
+        price: parseFloat(newItem.price)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setIsModalOpen(false); // Modal band
+      setNewItem({ name: '', price: '' }); // Form saaf
+      fetchProfile(); // Menu refresh
+    } catch (error) {
+      alert("Error adding item. Check backend.");
+      console.error(error);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('ownerToken');
+    navigate('/owner/login');
+  };
+
+  if (!profile) return <div style={{ padding: '50px', fontSize: '20px' }}>Loading Dashboard...</div>;
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f9fafb', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
+      
+      {/* 🍔 DARK RESTAURANT SIDEBAR */}
+      <div style={{ width: '260px', backgroundColor: '#1f2937', color: 'white', display: 'flex', flexDirection: 'column', padding: '24px 20px', flexShrink: 0, borderRight: '1px solid #374151' }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px', paddingBottom: '20px', borderBottom: '1px solid #374151' }}>
+          <div style={{ background: '#f97316', padding: '10px', borderRadius: '12px' }}>
+            <Utensils size={24} color="white" />
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>{profile.name}</h2>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>Owner Panel</p>
+          </div>
+        </div>
+
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+          <div onClick={() => setActiveTab('orders')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: activeTab === 'orders' ? 'rgba(249, 115, 22, 0.1)' : 'transparent', borderLeft: activeTab === 'orders' ? '4px solid #f97316' : '4px solid transparent', color: activeTab === 'orders' ? '#f97316' : '#d1d5db', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>
+            <ShoppingBag size={20} />
+            <span>Live Orders</span>
+          </div>
+          <div onClick={() => setActiveTab('menu')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: activeTab === 'menu' ? 'rgba(249, 115, 22, 0.1)' : 'transparent', borderLeft: activeTab === 'menu' ? '4px solid #f97316' : '4px solid transparent', color: activeTab === 'menu' ? '#f97316' : '#d1d5db', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>
+            <Utensils size={20} />
+            <span>Manage Menu</span>
+          </div>
+          <div onClick={() => setActiveTab('analytics')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: activeTab === 'analytics' ? 'rgba(249, 115, 22, 0.1)' : 'transparent', borderLeft: activeTab === 'analytics' ? '4px solid #f97316' : '4px solid transparent', color: activeTab === 'analytics' ? '#f97316' : '#d1d5db', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>
+            <DollarSign size={20} />
+            <span>Analytics</span>
+          </div>
+        </nav>
+
+        <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
+      </div>
+
+      {/* 🍕 MAIN CONTENT AREA */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
+          <h1 style={{ margin: 0, color: '#111827', fontSize: '24px' }}>
+            {activeTab === 'orders' && 'Live Orders'}
+            {activeTab === 'menu' && 'Manage Menu'}
+            {activeTab === 'analytics' && 'Analytics'}
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+             <span style={{ fontSize: '14px', color: '#6b7280' }}>Status:</span>
+             <span style={{ backgroundColor: '#dcfce3', color: '#166534', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>Online</span>
+          </div>
+        </div>
+
+        <div style={{ padding: '30px 40px', flex: 1, overflowY: 'auto' }}>
+          
+          {/* ORDERS TAB */}
+          {activeTab === 'orders' && (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px' }}>
+                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Total Orders Today</p>
+                  <h2 style={{ margin: '10px 0 0 0', fontSize: '28px', color: '#111827' }}>{orders.length}</h2>
+                </div>
+                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Pending Orders</p>
+                  <h2 style={{ margin: '10px 0 0 0', fontSize: '28px', color: '#f97316' }}>0</h2>
+                </div>
+                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Revenue Today</p>
+                  <h2 style={{ margin: '10px 0 0 0', fontSize: '28px', color: '#10b981' }}>0 PKR</h2>
+                </div>
+              </div>
+              <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+                <ShoppingBag size={48} style={{ margin: '0 auto 10px auto', opacity: 0.5 }} />
+                <h3>No active orders right now.</h3>
+                <p>When a customer places an order on WhatsApp, it will appear here.</p>
+              </div>
+            </div>
+          )}
+
+          {/* MENU TAB */}
+          {activeTab === 'menu' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <p style={{ margin: 0, color: '#6b7280' }}>Add or edit items in your restaurant menu.</p>
+                <button onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f97316', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  <Plus size={18} /> Add Menu Item
+                </button>
+              </div>
+
+              <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead style={{ backgroundColor: '#f9fafb', color: '#6b7280', fontSize: '13px' }}>
+                    <tr>
+                      <th style={{ padding: '16px 20px' }}>Item Name</th>
+                      <th style={{ padding: '16px 20px' }}>Price (PKR)</th>
+                      <th style={{ padding: '16px 20px' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.keys(profile.menu).length === 0 ? (
+                      <tr><td colSpan="3" style={{ padding: '30px', textAlign: 'center', color: '#9ca3af' }}>No items in menu yet. Add your first item!</td></tr>
+                    ) : (
+                      Object.entries(profile.menu).map(([itemName, details], index) => (
+                        <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                          <td style={{ padding: '16px 20px', fontWeight: '500' }}>{itemName}</td>
+                          <td style={{ padding: '16px 20px' }}>{details.price} PKR</td>
+                          <td style={{ padding: '16px 20px', display: 'flex', gap: '10px' }}>
+                            <button style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>
+                            <button style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ANALYTICS TAB */}
+          {activeTab === 'analytics' && (
+             <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+                <DollarSign size={48} style={{ margin: '0 auto 10px auto', opacity: 0.5 }} />
+                <h3>Analytics Coming Soon</h3>
+                <p>Sales graphs and peak hour reports will be available here.</p>
+             </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* 🟠 ADD MENU MODAL (Popup) */}
+      {isModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, color: '#111827' }}>Add Menu Item</h2>
+              <X size={24} color="#6b7280" style={{ cursor: 'pointer' }} onClick={() => setIsModalOpen(false)} />
+            </div>
+            
+            <form onSubmit={handleAddMenuItem} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#374151' }}>Item Name</label>
+                <input type="text" placeholder="e.g. Zinger Burger" required value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#374151' }}>Price (PKR)</label>
+                <input type="number" placeholder="e.g. 450" required value={newItem.price} onChange={(e) => setNewItem({...newItem, price: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '10px', backgroundColor: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '10px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save Item</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
