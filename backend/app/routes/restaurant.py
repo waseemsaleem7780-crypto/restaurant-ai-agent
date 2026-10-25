@@ -100,7 +100,7 @@ async def upload_menu_pdf(
         raise HTTPException(status_code=400, detail="PDF se koi text nahi mila (Image wali PDF ho sakti hai).")
 
     # 2. AI (Groq) se text ko JSON menu mein badlo
-    llm = ChatGroq(model="llama3-8b-8192", temperature=0, groq_api_key=settings.GROQ_API_KEY)
+    llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0, groq_api_key=settings.GROQ_API_KEY)
     
     prompt = f"""
     Extract the menu items from this restaurant menu text. 
