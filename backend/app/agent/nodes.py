@@ -5,7 +5,7 @@ import json
 
 # LLM Setup (Groq)
 llm = ChatGroq(
-    model="llama-3.1-8b-instant",  # <-- Groq ka abhi ka sabse fast aur live model
+    model=settings.GROQ_MODEL,  # <-- Yahan settings use karo
     temperature=0,
     groq_api_key=settings.GROQ_API_KEY
 )
