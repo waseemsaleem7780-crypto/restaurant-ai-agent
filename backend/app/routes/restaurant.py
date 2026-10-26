@@ -13,15 +13,14 @@ import jwt
 import io
 import json
 import os
+import re
 
 # OCR libraries
 from pdf2image import convert_from_bytes
 import pytesseract
 
-# Windows/Mac par Tesseract ka path set karna (Render/Linux par yeh zaroori nahi hota)
-if os.name == 'nt':  # Windows
+if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-# Mac par tesseract usually /usr/local/bin/tesseract ya /opt/homebrew/bin/tesseract hota hai
 
 router = APIRouter(prefix="/api/restaurant", tags=["Restaurant"])
 
@@ -143,7 +142,16 @@ async def upload_menu_pdf(
         ai_text = response.choices[0].message.content
         print("✅ [7] AI Response Received")
         
-        clean_json = ai_text.replace("```json", "").replace("```", "").strip()
+        # DEBUG: AI ka raw jawab print karo
+        print(f"🤖 [DEBUG] AI Raw Response (first 300 chars): {ai_text[:300]}")
+        print(f"🤖 [DEBUG] Response Length: {len(ai_text)}")
+        
+        # JSON ko extract karo (agar AI ne extra text likha ho)
+        json_match = re.search(r'\{.*\}', ai_text, re.DOTALL)
+        if not json_match:
+            raise ValueError(f"AI ne valid JSON nahi diya. Raw response: {ai_text[:200]}")
+        
+        clean_json = json_match.group(0)
         menu_dict = json.loads(clean_json)
         print(f"✅ [8] Parsed Items: {len(menu_dict)}")
         
