@@ -78,11 +78,16 @@ async def upload_menu_pdf(
     db: Session = Depends(get_db)
 ):
     """Owner PDF upload karega, AI usko padh kar menu train karega"""
+    print("🚀 [1] PDF Upload Request Received") # Debug
+    
     if not file.filename.endswith(".pdf"):
+        print("❌ [Error] File PDF nahi hai")
         raise HTTPException(status_code=400, detail="Sirf PDF file allowed hai")
 
     # 1. PDF se text nikalo
     pdf_content = await file.read()
+    print(f"📄 [2] PDF Size: {len(pdf_content)} bytes")
+    
     pdf_reader = PdfReader(io.BytesIO(pdf_content))
     extracted_text = ""
     for page in pdf_reader.pages:
@@ -90,7 +95,10 @@ async def upload_menu_pdf(
         if text:
             extracted_text += text + "\n"
 
+    print(f"📝 [3] Extracted Text Length: {len(extracted_text)} characters")
+
     if not extracted_text.strip():
+        print("❌ [Error] PDF se text nahi mila")
         raise HTTPException(status_code=400, detail="PDF se koi text nahi mila (Image wali PDF ho sakti hai).")
 
     # 2. Auto-Detect AI Model se text ko JSON menu mein badlo
@@ -104,21 +112,30 @@ async def upload_menu_pdf(
     """
     
     try:
-        llm = get_llm() # <-- Yeh khud working model dhoond lega
+        print("🤖 [4] Calling AI Model (OpenRouter)...")
+        llm = get_llm() 
         ai_response = llm.invoke(prompt)
+        print("✅ [5] AI Response Received")
+        
         clean_json = ai_response.content.replace("```json", "").replace("```", "").strip()
         menu_dict = json.loads(clean_json)
+        print(f"✅ [6] JSON Parsed Successfully. Items: {len(menu_dict)}")
+        
     except Exception as e:
+        print(f"❌ [Error] AI menu parse nahi kar paya: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI menu parse nahi kar paya: {str(e)}")
 
     # 3. Database mein save karo
+    print("💾 [7] Saving to Database...")
     restaurant = db.query(Restaurant).filter(Restaurant.id == payload["restaurant_id"]).first()
     restaurant.menu = menu_dict
     flag_modified(restaurant, "menu")
     db.commit()
 
     # 4. RAG (Vector DB) par train karo
+    print("🧠 [8] Training RAG...")
     train_restaurant_menu(restaurant.id, menu_dict)
+    print("🎉 [9] All Done!")
 
     return {
         "message": "PDF se menu extract ho gaya aur AI train ho gaya!",
