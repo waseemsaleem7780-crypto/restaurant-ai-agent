@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Copy, CheckCircle, X } from 'lucide-react';
+import { PlusCircle, Copy, CheckCircle, X, Trash2 } from 'lucide-react';
 import api from '../api/client';
 
 export default function Restaurants() {
@@ -47,6 +47,17 @@ export default function Restaurants() {
     }
   };
 
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Kya aap waqai "${name}" ko delete karna chahte hain?`)) {
+      try {
+        await api.delete(`/api/admin/restaurants/${id}`);
+        fetchRestaurants(); // List refresh karo
+      } catch (error) {
+        alert(error.response?.data?.detail || "Delete failed");
+      }
+    }
+  };
+
   const copyToClipboard = (email) => {
     const text = `Welcome to RestoAgent!\n\nLogin Link: https://restaurant-ai-agent-omega.vercel.app/owner/login\nEmail: ${email}\nPassword: (Jo aapne set kiya tha)`;
     navigator.clipboard.writeText(text);
@@ -91,12 +102,20 @@ export default function Restaurants() {
                   {r.whatsapp_provider || 'WEB2C'}
                 </td>
                 <td style={{ padding: '16px 20px', color: '#3b82f6', fontWeight: '500' }}>{r.owner_email || 'N/A'}</td>
-                <td style={{ padding: '16px 20px' }}>
+                <td style={{ padding: '16px 20px', display: 'flex', gap: '8px' }}>
                   <button 
                     onClick={() => copyToClipboard(r.owner_email)}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px', background: copiedId === r.owner_email ? '#dcfce3' : '#f1f5f9', color: copiedId === r.owner_email ? '#166534' : '#475569', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
                   >
-                    {copiedId === r.owner_email ? <><CheckCircle size={16} /> Copied!</> : <><Copy size={16} /> Copy Login Link</>}
+                    {copiedId === r.owner_email ? <><CheckCircle size={16} /> Copied!</> : <><Copy size={16} /> Copy</>}
+                  </button>
+                  
+                  {/* DELETE BUTTON */}
+                  <button 
+                    onClick={() => handleDelete(r.id, r.name)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fee2e2', color: '#ef4444', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+                  >
+                    <Trash2 size={16} /> Delete
                   </button>
                 </td>
               </tr>
