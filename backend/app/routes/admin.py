@@ -91,3 +91,13 @@ def migrate_db(db: Session = Depends(get_db)):
         return {"message": "✅ Columns add ho gaye! Ab login karein."}
     except Exception as e:
         return {"message": f"Error ya pehle se maujood: {str(e)}"}
+
+@router.delete("/restaurants/{restaurant_id}")
+def delete_restaurant(restaurant_id: int, db: Session = Depends(get_db)):
+    restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant nahi mila")
+    
+    db.delete(restaurant)
+    db.commit()
+    return {"message": f"Restaurant ID {restaurant_id} delete ho gaya"}
