@@ -136,7 +136,7 @@ async def upload_menu_pdf(
         print("🤖 [6] Calling AI Model...")
         client = get_llm()
         response = client.chat.completions.create(
-            model="openrouter/free",
+            model="meta-llama/llama-3.1-8b-instruct:free", # <-- Yeh model
             messages=[{"role": "user", "content": prompt}]
         )
         ai_text = response.choices[0].message.content

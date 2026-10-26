@@ -15,7 +15,7 @@ def get_llm():
             }
         )
         client.chat.completions.create(
-            model="openrouter/free",
+            model="meta-llama/llama-3.1-8b-instruct:free", # <-- Yeh model try karein
             messages=[{"role": "user", "content": "Hello"}]
         )
         logger.info("✅ OpenRouter Free Router Working")
