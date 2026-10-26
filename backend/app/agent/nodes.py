@@ -12,9 +12,12 @@ def intent_node(state: AgentState):
     Return only the single word.
     """
     try:
-        llm = get_llm() # Auto-detect model
-        response = llm.invoke(prompt)
-        intent = response.content.strip().lower()
+        client = get_llm()  # <-- OpenRouter Client
+        response = client.chat.completions.create(
+            model="google/gemini-2.0-flash-001",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        intent = response.choices[0].message.content.strip().lower()
         if intent not in ['menu', 'order', 'status', 'other']:
             intent = 'other'
     except Exception as e:

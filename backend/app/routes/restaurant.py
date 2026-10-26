@@ -112,18 +112,22 @@ async def upload_menu_pdf(
     """
     
     try:
-        print("🤖 [4] Calling AI Model (OpenRouter)...")
-        llm = get_llm() 
-        ai_response = llm.invoke(prompt)
+        print("🤖 [4] Calling AI Model...")
+        client = get_llm()
+        response = client.chat.completions.create(
+            model="google/gemini-2.0-flash-001",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        ai_text = response.choices[0].message.content
         print("✅ [5] AI Response Received")
         
-        clean_json = ai_response.content.replace("```json", "").replace("```", "").strip()
+        clean_json = ai_text.replace("```json", "").replace("```", "").strip()
         menu_dict = json.loads(clean_json)
-        print(f"✅ [6] JSON Parsed Successfully. Items: {len(menu_dict)}")
+        print(f"✅ [6] Parsed Items: {len(menu_dict)}")
         
     except Exception as e:
-        print(f"❌ [Error] AI menu parse nahi kar paya: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"AI menu parse nahi kar paya: {str(e)}")
+        print(f"❌ [Error] AI: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI error: {str(e)}")
 
     # 3. Database mein save karo
     print("💾 [7] Saving to Database...")
