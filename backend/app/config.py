@@ -13,5 +13,7 @@ class Settings:
     WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")  # <-- Key hata di
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
+    TWILIO_PHONE_NUMBER: str = os.getenv("TWILIO_PHONE_NUMBER", "+14155238886")
 
 settings = Settings()
