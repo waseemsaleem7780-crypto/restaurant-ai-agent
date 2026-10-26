@@ -15,10 +15,10 @@ def get_llm():
             }
         )
         client.chat.completions.create(
-            model="openai/gpt-oss-20b:free",
+            model="openrouter/free",
             messages=[{"role": "user", "content": "Hello"}]
         )
-        logger.info("✅ OpenRouter Working")
+        logger.info("✅ OpenRouter Free Router Working")
         return client
     except Exception as e:
         logger.error(f"❌ OpenRouter Failed: {str(e)}")

@@ -14,7 +14,7 @@ def intent_node(state: AgentState):
     try:
         client = get_llm()  # <-- OpenRouter Client
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b:free",
+            model="openrouter/free",
             messages=[{"role": "user", "content": prompt}]
         )
         intent = response.choices[0].message.content.strip().lower()
