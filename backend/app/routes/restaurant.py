@@ -115,7 +115,7 @@ async def upload_menu_pdf(
         print("🤖 [4] Calling AI Model...")
         client = get_llm()
         response = client.chat.completions.create(
-            model="google/gemini-2.0-flash-001",
+            model="openai/gpt-oss-20b:free",
             messages=[{"role": "user", "content": prompt}]
         )
         ai_text = response.choices[0].message.content

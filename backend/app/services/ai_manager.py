@@ -5,7 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 def get_llm():
-    """OpenRouter use karega direct OpenAI client se (langchain_openai ki zaroorat nahi)"""
     try:
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
