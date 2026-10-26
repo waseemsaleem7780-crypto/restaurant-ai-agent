@@ -5,7 +5,7 @@ def send_whatsapp_message(to_phone: str, message: str, provider: str = "twilio",
     """Twilio ya Web2C ke zariye message bhejta hai"""
     
     if provider == "twilio":
-        # Ab yeh values settings (environment variables) se aayengi
+        # Render ke environment se values aayengi
         account_sid = settings.TWILIO_ACCOUNT_SID  
         auth_token = api_key
         from_number = settings.TWILIO_PHONE_NUMBER  

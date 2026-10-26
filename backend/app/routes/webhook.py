@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, BackgroundTasks
+from fastapi import APIRouter, Request, Depends, BackgroundTasks, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Restaurant
@@ -33,7 +33,7 @@ def process_agent_reply(restaurant_id: int, menu: dict, customer_phone: str, mes
 
 @router.post("/web2c")
 async def web2c_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """Web2C ya Twilio se message aane par yeh trigger hota hai"""
+    """Twilio ya Web2C se message aane par yeh trigger hota hai"""
     try:
         content_type = request.headers.get("content-type", "")
         
@@ -51,13 +51,14 @@ async def web2c_webhook(request: Request, background_tasks: BackgroundTasks, db:
             receiving_number = data.get("to")
 
         if not customer_phone or not message_text:
-            return {"status": "ignored"}
+            return Response(content="<Response></Response>", media_type="text/xml")
 
         restaurant = db.query(Restaurant).filter(Restaurant.whatsapp_number == receiving_number).first()
         
         if not restaurant:
-            return {"status": "unknown number"}
+            return Response(content="<Response></Response>", media_type="text/xml")
 
+        # Background task mein AI chalao
         background_tasks.add_task(
             process_agent_reply, 
             restaurant.id, 
@@ -68,7 +69,9 @@ async def web2c_webhook(request: Request, background_tasks: BackgroundTasks, db:
             restaurant.whatsapp_api_key or ""
         )
 
-        return {"status": "ok"}
+        # Twilio ko XML response bhejo (TwiML) taake wo error na de
+        return Response(content="<Response></Response>", media_type="text/xml")
+        
     except Exception as e:
         print(f"Webhook Error: {e}")
-        return {"status": "error"}
+        return Response(content="<Response></Response>", media_type="text/xml")
