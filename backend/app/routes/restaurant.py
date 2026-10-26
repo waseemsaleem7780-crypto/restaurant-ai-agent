@@ -144,9 +144,8 @@ async def upload_menu_pdf(
         
         # DEBUG: AI ka raw jawab print karo
         print(f"🤖 [DEBUG] AI Raw Response (first 300 chars): {ai_text[:300]}")
-        print(f"🤖 [DEBUG] Response Length: {len(ai_text)}")
         
-        # JSON ko extract karo (agar AI ne extra text likha ho)
+        # JSON ko extract karo
         json_match = re.search(r'\{.*\}', ai_text, re.DOTALL)
         if not json_match:
             raise ValueError(f"AI ne valid JSON nahi diya. Raw response: {ai_text[:200]}")
