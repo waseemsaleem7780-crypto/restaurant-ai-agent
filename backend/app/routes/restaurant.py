@@ -136,7 +136,7 @@ async def upload_menu_pdf(
         print("🤖 [6] Calling AI Model...")
         client = get_llm()
         response = client.chat.completions.create(
-            model="google/gemma-2-9b-it:free", # <-- Naya free model
+            model="openrouter/free",
             messages=[{"role": "user", "content": prompt}]
         )
         ai_text = response.choices[0].message.content
