@@ -101,3 +101,13 @@ def delete_restaurant(restaurant_id: int, db: Session = Depends(get_db)):
     db.delete(restaurant)
     db.commit()
     return {"message": f"Restaurant ID {restaurant_id} delete ho gaya"}
+
+@router.get("/delete-restaurant/{restaurant_id}")
+def delete_restaurant_get(restaurant_id: int, db: Session = Depends(get_db)):
+    restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant nahi mila")
+    
+    db.delete(restaurant)
+    db.commit()
+    return {"message": f"Restaurant ID {restaurant_id} delete ho gaya"}
