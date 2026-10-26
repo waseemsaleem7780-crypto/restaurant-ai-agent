@@ -8,6 +8,9 @@ from app.services.whatsapp import send_whatsapp_message
 router = APIRouter(prefix="/webhook", tags=["WhatsApp Webhook"])
 
 def process_agent_reply(restaurant_id: int, menu: dict, customer_phone: str, message: str, provider: str, api_key: str):
+    print(f"🚀 [DEBUG] Processing reply for: {customer_phone}")
+    print(f"🚀 [DEBUG] Provider: {provider}")
+    
     initial_state = {
         "restaurant_id": restaurant_id,
         "menu": menu,
@@ -18,15 +21,24 @@ def process_agent_reply(restaurant_id: int, menu: dict, customer_phone: str, mes
         "order_items": None
     }
     
-    result = agent_app.invoke(initial_state)
-    ai_response = result["response"]
+    try:
+        result = agent_app.invoke(initial_state)
+        ai_response = result["response"]
+        print(f"✅ [DEBUG] AI Response: {ai_response[:100]}")
+    except Exception as e:
+        print(f"❌ [DEBUG] AI Agent Error: {e}")
+        return
     
-    send_whatsapp_message(
-        to_phone=customer_phone, 
-        message=ai_response,
-        provider=provider,
-        api_key=api_key
-    )
+    try:
+        send_result = send_whatsapp_message(
+            to_phone=customer_phone, 
+            message=ai_response,
+            provider=provider,
+            api_key=api_key
+        )
+        print(f"✅ [DEBUG] WhatsApp Send Result: {send_result}")
+    except Exception as e:
+        print(f"❌ [DEBUG] WhatsApp Send Error: {e}")
 
 @router.post("/web2c")
 async def web2c_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
@@ -44,12 +56,15 @@ async def web2c_webhook(request: Request, background_tasks: BackgroundTasks, db:
             message_text = data.get("text", {}).get("body", "")
             receiving_number = data.get("to")
 
+        print(f"📩 [DEBUG] Webhook received from {customer_phone}: {message_text}")
+
         if not customer_phone or not message_text:
             return Response(content="<Response></Response>", media_type="text/xml")
 
         restaurant = db.query(Restaurant).filter(Restaurant.whatsapp_number == receiving_number).first()
         
         if not restaurant:
+            print(f"❌ [DEBUG] Restaurant not found for number: {receiving_number}")
             return Response(content="<Response></Response>", media_type="text/xml")
 
         background_tasks.add_task(
@@ -62,9 +77,8 @@ async def web2c_webhook(request: Request, background_tasks: BackgroundTasks, db:
             restaurant.whatsapp_api_key or ""
         )
 
-        # Twilio ko XML (TwiML) response bhejo
         return Response(content="<Response></Response>", media_type="text/xml")
         
     except Exception as e:
-        print(f"Webhook Error: {e}")
+        print(f"❌ [DEBUG] Webhook Error: {e}")
         return Response(content="<Response></Response>", media_type="text/xml")
