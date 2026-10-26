@@ -7,16 +7,24 @@ from app.schemas import RestaurantResponse, RestaurantLogin, TokenResponse
 from app.auth import verify_password, create_access_token
 from app.config import settings
 from app.services.rag import train_restaurant_menu
-from app.services.ai_manager import get_llm  # <-- Auto-detect model import kiya
-from pypdf import PdfReader
+from app.services.ai_manager import get_llm
 from pydantic import BaseModel
 import jwt
 import io
 import json
+import os
+
+# OCR libraries
+from pdf2image import convert_from_bytes
+import pytesseract
+
+# Windows/Mac par Tesseract ka path set karna (Render/Linux par yeh zaroori nahi hota)
+if os.name == 'nt':  # Windows
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Mac par tesseract usually /usr/local/bin/tesseract ya /opt/homebrew/bin/tesseract hota hai
 
 router = APIRouter(prefix="/api/restaurant", tags=["Restaurant"])
 
-# Helper function: Token check karne ke liye
 def verify_restaurant_token(authorization: str = Header(...)):
     try:
         token = authorization.split(" ")[1]
@@ -77,31 +85,45 @@ async def upload_menu_pdf(
     payload: dict = Depends(verify_restaurant_token), 
     db: Session = Depends(get_db)
 ):
-    """Owner PDF upload karega, AI usko padh kar menu train karega"""
-    print("🚀 [1] PDF Upload Request Received") # Debug
+    print("🚀 [1] PDF Upload Request Received")
     
     if not file.filename.endswith(".pdf"):
-        print("❌ [Error] File PDF nahi hai")
         raise HTTPException(status_code=400, detail="Sirf PDF file allowed hai")
 
-    # 1. PDF se text nikalo
     pdf_content = await file.read()
     print(f"📄 [2] PDF Size: {len(pdf_content)} bytes")
     
-    pdf_reader = PdfReader(io.BytesIO(pdf_content))
     extracted_text = ""
-    for page in pdf_reader.pages:
-        text = page.extract_text()
-        if text:
-            extracted_text += text + "\n"
+    
+    # 1. Pehle pypdf se try karo (agar text-based PDF hai toh)
+    try:
+        from pypdf import PdfReader
+        pdf_reader = PdfReader(io.BytesIO(pdf_content))
+        for page in pdf_reader.pages:
+            text = page.extract_text()
+            if text:
+                extracted_text += text + "\n"
+        print(f"📝 [3] Text-based extraction: {len(extracted_text)} chars")
+    except Exception as e:
+        print(f"⚠️ pypdf failed: {e}")
 
-    print(f"📝 [3] Extracted Text Length: {len(extracted_text)} characters")
+    # 2. Agar text nahi mila, toh OCR (image-based) try karo
+    if not extracted_text.strip():
+        print("🔍 [4] Falling back to OCR (Image-based PDF)...")
+        try:
+            images = convert_from_bytes(pdf_content)
+            for img in images:
+                text = pytesseract.image_to_string(img, lang='eng')
+                extracted_text += text + "\n"
+            print(f"📝 [5] OCR extraction: {len(extracted_text)} chars")
+        except Exception as e:
+            print(f"❌ OCR Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"PDF se text nahi nikal paya (OCR error): {str(e)}")
 
     if not extracted_text.strip():
-        print("❌ [Error] PDF se text nahi mila")
-        raise HTTPException(status_code=400, detail="PDF se koi text nahi mila (Image wali PDF ho sakti hai).")
+        raise HTTPException(status_code=400, detail="PDF se koi text nahi mila (Bilkul khali PDF ho sakti hai).")
 
-    # 2. Auto-Detect AI Model se text ko JSON menu mein badlo
+    # 3. AI se menu parse karo
     prompt = f"""
     Extract the menu items from this restaurant menu text. 
     Return ONLY a valid JSON object where keys are item names and values are objects with "price" (number) and "available" (true).
@@ -112,32 +134,30 @@ async def upload_menu_pdf(
     """
     
     try:
-        print("🤖 [4] Calling AI Model...")
+        print("🤖 [6] Calling AI Model...")
         client = get_llm()
         response = client.chat.completions.create(
             model="openrouter/free",
             messages=[{"role": "user", "content": prompt}]
         )
         ai_text = response.choices[0].message.content
-        print("✅ [5] AI Response Received")
+        print("✅ [7] AI Response Received")
         
         clean_json = ai_text.replace("```json", "").replace("```", "").strip()
         menu_dict = json.loads(clean_json)
-        print(f"✅ [6] Parsed Items: {len(menu_dict)}")
+        print(f"✅ [8] Parsed Items: {len(menu_dict)}")
         
     except Exception as e:
         print(f"❌ [Error] AI: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI error: {str(e)}")
 
-    # 3. Database mein save karo
-    print("💾 [7] Saving to Database...")
+    # 4. Database mein save karo
     restaurant = db.query(Restaurant).filter(Restaurant.id == payload["restaurant_id"]).first()
     restaurant.menu = menu_dict
     flag_modified(restaurant, "menu")
     db.commit()
 
-    # 4. RAG (Vector DB) par train karo
-    print("🧠 [8] Training RAG...")
+    # 5. RAG train karo
     train_restaurant_menu(restaurant.id, menu_dict)
     print("🎉 [9] All Done!")
 
