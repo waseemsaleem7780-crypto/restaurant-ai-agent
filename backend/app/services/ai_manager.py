@@ -15,12 +15,11 @@ def get_llm():
             }
         )
         client.chat.completions.create(
-            model="openrouter/free",  # <-- Auto-select free model
+            model="google/gemma-2-9b-it:free",  # <-- Naya free model
             messages=[{"role": "user", "content": "Hello"}]
         )
-        logger.info("✅ OpenRouter Free Router Working")
+        logger.info("✅ OpenRouter Working")
         return client
     except Exception as e:
         logger.error(f"❌ OpenRouter Failed: {str(e)}")
-        print(f"❌ OPENROUTER REAL ERROR: {str(e)}") # <-- Yeh line add karein
-        raise Exception(f"OpenRouter API kaam nahi kar raha: {str(e)}")
+        raise Exception("OpenRouter API kaam nahi kar raha")
