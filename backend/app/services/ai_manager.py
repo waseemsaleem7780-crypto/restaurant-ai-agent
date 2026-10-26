@@ -22,4 +22,5 @@ def get_llm():
         return client
     except Exception as e:
         logger.error(f"❌ OpenRouter Failed: {str(e)}")
-        raise Exception("OpenRouter API kaam nahi kar raha")
+        print(f"❌ OPENROUTER REAL ERROR: {str(e)}") # <-- Yeh line add karein
+        raise Exception(f"OpenRouter API kaam nahi kar raha: {str(e)}")
