@@ -61,7 +61,26 @@ async def web2c_webhook(request: Request, background_tasks: BackgroundTasks, db:
         if not customer_phone or not message_text:
             return Response(content="<Response></Response>", media_type="text/xml")
 
-        restaurant = db.query(Restaurant).filter(Restaurant.whatsapp_number == receiving_number).first()
+        # Number ko normalize karo (03196952226 -> +923196952226)
+        normalized_number = receiving_number
+        if receiving_number.startswith("0"):
+            normalized_number = "+92" + receiving_number[1:]
+        elif receiving_number.startswith("92"):
+            normalized_number = "+" + receiving_number
+        
+        print(f"🔍 [DEBUG] Normalized number: {normalized_number}")
+
+        # Pehle normalized number se try karo
+        restaurant = db.query(Restaurant).filter(Restaurant.whatsapp_number == normalized_number).first()
+        
+        # Agar nahi mila, toh original format se try karo
+        if not restaurant:
+            restaurant = db.query(Restaurant).filter(Restaurant.whatsapp_number == receiving_number).first()
+        
+        # Agar phir bhi nahi mila, toh 0 wale format se try karo
+        if not restaurant and receiving_number.startswith("+"):
+            old_format = "0" + receiving_number[3:]
+            restaurant = db.query(Restaurant).filter(Restaurant.whatsapp_number == old_format).first()
         
         if not restaurant:
             print(f"❌ [DEBUG] Restaurant not found for number: {receiving_number}")
